@@ -1,5 +1,6 @@
 package com.kuyermqi.quotawidget.settings
 
+import com.kuyermqi.quotawidget.context.ContextHealthSnapshot
 import com.kuyermqi.quotawidget.domain.AppSettings
 import com.kuyermqi.quotawidget.domain.CurrencyPreference
 import com.kuyermqi.quotawidget.domain.UsageDisplayMode
@@ -102,6 +103,11 @@ interface PlatformSettingsRepository {
 
     suspend fun getUpdateIgnoredVersion(): String?
     suspend fun setUpdateIgnoredVersion(version: String?)
+
+    fun observeContextHealth(): Flow<ContextHealthSnapshot?>
+    suspend fun getContextHealth(): ContextHealthSnapshot?
+    suspend fun saveContextHealth(snapshot: ContextHealthSnapshot)
+    suspend fun clearContextHealth()
 
     fun observeAppSettings(): Flow<AppSettings>
     suspend fun getAppSettings(): AppSettings
