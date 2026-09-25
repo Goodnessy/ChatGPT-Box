@@ -311,6 +311,13 @@ object WidgetGlanceState {
             this[newApiUsageDisplayModeKey] = newApiSettings.usageDisplayMode.name
             this[newApiUsageProgressStyleKey] = newApiSettings.usageProgressStyle.name
         }
+        if (contextHealth != null) {
+            this[contextHealthPercentKey] = contextHealth.estimatedPercent
+            this[contextHealthStatusKey] = contextHealth.status.name
+        } else {
+            remove(contextHealthPercentKey)
+            remove(contextHealthStatusKey)
+        }
         when (display) {
             WidgetDisplayState.NotConfigured -> {
                 this[statusKey] = Status.NOT_CONFIGURED
