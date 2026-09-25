@@ -29,7 +29,7 @@ jobs:
       - name: Run shared tests
         run: |
           chmod +x ./gradlew
-          ./gradlew :shared:testDebugUnitTest --tests "com.kuyermqi.quotawidget.context.ContextHealthTest"
+          ./gradlew :shared:testAndroidHostTest --tests "com.kuyermqi.quotawidget.context.ContextHealthTest"
 
       - name: Build debug APK
         run: |
