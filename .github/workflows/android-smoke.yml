@@ -59,8 +59,5 @@ jobs:
             adb shell pidof com.kuyermqi.quotawidget.debug || true
             echo "===== CRASH LOG ====="
             adb logcat -d -v threadtime | grep -A 80 -B 20 -E "FATAL EXCEPTION|AndroidRuntime|Process: com.kuyermqi.quotawidget.debug" || true
-            if ! adb shell pidof com.kuyermqi.quotawidget.debug >/dev/null; then
-              echo "App process is not running after startup."
-              exit 1
-            fi
+            adb shell pidof com.kuyermqi.quotawidget.debug >/dev/null || { echo "App process is not running after startup."; exit 1; }
             echo "App stayed alive for 8 seconds."

@@ -33,11 +33,11 @@ jobs:
       - name: Prepare APK
         run: |
           mkdir -p out
-          cp androidApp/build/outputs/apk/debug/androidApp-debug.apk out/ChatGPT-Box-v0.1.2-debug.apk
+          cp androidApp/build/outputs/apk/debug/androidApp-debug.apk out/ChatGPT-Box-v0.1.3-debug.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: ChatGPT-Box-v0.1.2-debug
-          path: out/ChatGPT-Box-v0.1.2-debug.apk
+          name: ChatGPT-Box-v0.1.3-debug
+          path: out/ChatGPT-Box-v0.1.3-debug.apk
           if-no-files-found: error
