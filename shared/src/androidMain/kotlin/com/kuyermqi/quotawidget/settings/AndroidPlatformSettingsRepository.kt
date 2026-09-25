@@ -15,6 +15,7 @@ import com.google.crypto.tink.Aead
 import com.google.crypto.tink.KeyTemplates
 import com.google.crypto.tink.aead.AeadConfig
 import com.google.crypto.tink.integration.android.AndroidKeysetManager
+import com.kuyermqi.quotawidget.context.ContextHealthSnapshot
 import com.kuyermqi.quotawidget.domain.ALLOWED_REFRESH_INTERVAL_MINUTES
 import com.kuyermqi.quotawidget.domain.AppSettings
 import com.kuyermqi.quotawidget.domain.CurrencyPreference
@@ -38,8 +39,12 @@ import com.kuyermqi.quotawidget.platform.PlatformRegistry
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "quota_widget_settings")
+private val contextHealthJson = Json { ignoreUnknownKeys = true }
 
 class AndroidPlatformSettingsRepository(
     context: Context,
@@ -134,6 +139,7 @@ class AndroidPlatformSettingsRepository(
                 prefs.remove(Keys.CODEX_EXPIRES_AT)
                 prefs.remove(Keys.CODEX_EMAIL)
                 prefs.remove(Keys.CODEX_PLAN_TYPE)
+                prefs.remove(Keys.CONTEXT_HEALTH_JSON)
                 prefs.clearWidgetPayload(PlatformIds.CODEX)
                 prefs[widgetStatusKey(PlatformIds.CODEX)] = Status.NOT_CONFIGURED
             } else {
@@ -364,6 +370,24 @@ class AndroidPlatformSettingsRepository(
         }
     }
 
+    override fun observeContextHealth(): Flow<ContextHealthSnapshot?> =
+        dataStore.data.map { prefs -> prefs.toContextHealthSnapshot() }
+
+    override suspend fun getContextHealth(): ContextHealthSnapshot? =
+        dataStore.data.first().toContextHealthSnapshot()
+
+    override suspend fun saveContextHealth(snapshot: ContextHealthSnapshot) {
+        dataStore.edit { prefs ->
+            prefs[Keys.CONTEXT_HEALTH_JSON] = contextHealthJson.encodeToString(snapshot)
+        }
+    }
+
+    override suspend fun clearContextHealth() {
+        dataStore.edit { prefs ->
+            prefs.remove(Keys.CONTEXT_HEALTH_JSON)
+        }
+    }
+
     override fun observeAppSettings(): Flow<AppSettings> =
         dataStore.data.map { prefs -> prefs.toAppSettings() }
 
@@ -379,6 +403,13 @@ class AndroidPlatformSettingsRepository(
             prefs[Keys.CHECK_FOR_UPDATES_ON_LAUNCH] = settings.checkForUpdatesOnLaunch
         }
     }
+
+    private fun Preferences.toContextHealthSnapshot(): ContextHealthSnapshot? =
+        this[Keys.CONTEXT_HEALTH_JSON]?.let { raw ->
+            runCatching {
+                contextHealthJson.decodeFromString<ContextHealthSnapshot>(raw)
+            }.getOrNull()
+        }
 
     private fun Preferences.toAppSettings(): AppSettings {
         val interval = this[Keys.REFRESH_INTERVAL_MINUTES] ?: DEFAULT_REFRESH_INTERVAL_MINUTES
@@ -609,6 +640,7 @@ class AndroidPlatformSettingsRepository(
         val CODEX_WIDGET_WINDOW = stringPreferencesKey("codex_widget_window")
         val CODEX_USAGE_DISPLAY = stringPreferencesKey("codex_usage_display")
         val CODEX_USAGE_PROGRESS_STYLE = stringPreferencesKey("codex_usage_progress_style")
+        val CONTEXT_HEALTH_JSON = stringPreferencesKey("context_health_json")
         val NEW_API_BASE_URL = stringPreferencesKey("new_api_base_url")
         val NEW_API_KEY_ENC = stringPreferencesKey("new_api_key_enc")
         val NEW_API_QUOTA_PER_USD = longPreferencesKey("new_api_quota_per_usd")
