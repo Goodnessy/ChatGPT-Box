@@ -27,6 +27,7 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.kuyermqi.quotawidget.R
+import com.kuyermqi.quotawidget.context.ContextHealthStatus
 import com.kuyermqi.quotawidget.domain.QuotaSnapshot
 import com.kuyermqi.quotawidget.domain.QuotaWindow
 import com.kuyermqi.quotawidget.domain.QuotaWindowKind
@@ -98,12 +99,17 @@ fun UsageOverviewWidgetContent(
     usageDisplayMode: UsageDisplayMode,
     usageProgressStyle: UsageProgressStyle,
     overviewKinds: List<QuotaWindowKind>,
+    contextHealthPercent: Int? = null,
+    contextHealthStatus: ContextHealthStatus? = null,
 ) {
-    val density = if (LocalSize.current.height >= UsageOverviewSizeComfortable.height) {
+    val isComfortable = LocalSize.current.height >= UsageOverviewSizeComfortable.height
+    val density = if (isComfortable) {
         ComfortableDensity
     } else {
         CompactDensity
     }
+    val showContextHealth =
+        isComfortable && contextHealthPercent != null && contextHealthStatus != null
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
@@ -174,6 +180,8 @@ fun UsageOverviewWidgetContent(
                         usageDisplayMode = usageDisplayMode,
                         usageProgressStyle = usageProgressStyle,
                         overviewKinds = overviewKinds,
+                        contextHealthPercent = contextHealthPercent.takeIf { showContextHealth },
+                        contextHealthStatus = contextHealthStatus.takeIf { showContextHealth },
                     )
                 }
             }
@@ -189,9 +197,16 @@ private fun UsageOverviewSuccessBlock(
     usageDisplayMode: UsageDisplayMode,
     usageProgressStyle: UsageProgressStyle,
     overviewKinds: List<QuotaWindowKind>,
+    contextHealthPercent: Int?,
+    contextHealthStatus: ContextHealthStatus?,
 ) {
-    val kinds = overviewKinds.ifEmpty {
+    val baseKinds = overviewKinds.ifEmpty {
         listOf(QuotaWindowKind.WEEKLY, QuotaWindowKind.MONTHLY)
+    }
+    val kinds = if (contextHealthPercent != null && contextHealthStatus != null) {
+        baseKinds.take(2)
+    } else {
+        baseKinds
     }
     Column(
         modifier = GlanceModifier
@@ -207,6 +222,15 @@ private fun UsageOverviewSuccessBlock(
                 density = density,
                 usageDisplayMode = usageDisplayMode,
                 usageProgressStyle = usageProgressStyle,
+            )
+        }
+        if (contextHealthPercent != null && contextHealthStatus != null) {
+            if (kinds.isNotEmpty()) Spacer(GlanceModifier.height(density.rowGap))
+            ContextHealthOverviewRow(
+                percent = contextHealthPercent,
+                status = contextHealthStatus,
+                openApp = openApp,
+                density = density,
             )
         }
         Spacer(GlanceModifier.height(density.updatedGap))
@@ -287,5 +311,46 @@ private fun OverviewUsageRow(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ContextHealthOverviewRow(
+    percent: Int,
+    status: ContextHealthStatus,
+    openApp: Action,
+    density: OverviewDensity,
+) {
+    val statusText = when (status) {
+        ContextHealthStatus.HEALTHY -> "🟢 健康"
+        ContextHealthStatus.LONG -> "🟡 偏长"
+        ContextHealthStatus.MIGRATION_RECOMMENDED -> "🟠 建议迁移"
+        ContextHealthStatus.HIGH_RISK -> "🔴 高风险"
+    }
+    Row(
+        modifier = GlanceModifier
+            .fillMaxWidth()
+            .clickableNoRipple(openApp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "上下文",
+            style = TextStyle(
+                color = GlanceTheme.colors.onSurface,
+                fontSize = density.labelSize,
+                fontWeight = FontWeight.Medium,
+            ),
+            maxLines = 1,
+            modifier = GlanceModifier.defaultWeight(),
+        )
+        Text(
+            text = "$statusText · 约 ${percent.coerceIn(0, 99)}%",
+            style = TextStyle(
+                color = GlanceTheme.colors.onSurface,
+                fontSize = density.labelSize,
+                fontWeight = FontWeight.Bold,
+            ),
+            maxLines = 1,
+        )
     }
 }
