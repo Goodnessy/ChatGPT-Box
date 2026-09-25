@@ -1,8 +1,9 @@
 package com.kuyermqi.quotawidget.platform
 
 /**
- * Extensible quota/balance platform contract.
- * Add new platforms by implementing this and registering in [PlatformRegistry].
+ * ChatGPT Box V0.1 only exposes the Codex quota source.
+ * Other provider implementations remain in the codebase temporarily so the
+ * upstream quota parsing can be updated cleanly while the product UI stays focused.
  */
 interface QuotaPlatform {
     val id: String
@@ -19,20 +20,8 @@ object PlatformIds {
 object PlatformRegistry {
     val platforms: List<QuotaPlatform> = listOf(
         object : QuotaPlatform {
-            override val id = PlatformIds.DEEPSEEK
-            override val displayName = "DeepSeek"
-        },
-        object : QuotaPlatform {
-            override val id = PlatformIds.OPENCODE_GO
-            override val displayName = "OpenCode Go"
-        },
-        object : QuotaPlatform {
             override val id = PlatformIds.CODEX
-            override val displayName = "Codex"
-        },
-        object : QuotaPlatform {
-            override val id = PlatformIds.NEW_API
-            override val displayName = "NewAPI"
+            override val displayName = "ChatGPT / Codex"
         },
     )
 

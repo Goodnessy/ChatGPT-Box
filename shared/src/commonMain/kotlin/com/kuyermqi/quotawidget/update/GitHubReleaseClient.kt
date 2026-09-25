@@ -25,11 +25,11 @@ class GitHubReleaseClient(
     }
 
     companion object {
-        private const val OWNER = "657kbps"
-        private const val REPO = "quota-widget"
+        private const val OWNER = "Goodnessy"
+        private const val REPO = "ChatGPT-Box"
         private const val LATEST_RELEASE_URL =
             "https://api.github.com/repos/$OWNER/$REPO/releases/latest"
-        private const val USER_AGENT = "quota-widget"
+        private const val USER_AGENT = "chatgpt-box"
     }
 }
 
