@@ -58,25 +58,25 @@ fun estimateContextHealth(data: ConversationContextData): ContextHealthSnapshot 
     // Heuristic health score only. It is not an official model-context percentage.
     val tokenPressure = pressure(estimatedTokens.toDouble(), REFERENCE_TOKENS)
     val messagePressure = pressure(visibleMessages.size.toDouble(), REFERENCE_MESSAGES)
-    val imagePresssure = pressure(imageCount.toDouble(), REFERENCE_IMAGES)
+    val imagePressure = pressure(imageCount.toDouble(), REFERENCE_IMAGES)
     val filePressure = pressure(fileCount.toDouble(), REFERENCE_FILES)
     val codePressure = pressure(codeBlockCount.toDouble(), REFERENCE_CODE_BLOCKS)
-    val longTextPresssure = pressure(longTextCount.toDouble(), REFERENCE_LONG_TEXTS)
+    val longTextPressure = pressure(longTextCount.toDouble(), REFERENCE_LONG_TEXTS)
 
     val percent = (
         tokenPressure * 0.72 +
             messagePressure * 0.12 +
             imagePressure * 0.06 +
             filePressure * 0.04 +
-            codePresssure * 0.04 +
-            longTextPresssure * 0.02
+            codePressure * 0.04 +
+            longTextPressure * 0.02
         ).roundToInt().coerceIn(0, 99)
 
     return ContextHealthSnapshot(
         conversationId = data.conversationId,
         title = data.title,
         estimatedPercent = percent,
-        status = contextHealthStatus(),
+        status = contextHealthStatus(percent),
         messageCount = visibleMessages.size,
         userMessageCount = userMessages,
         assistantMessageCount = assistantMessages,
