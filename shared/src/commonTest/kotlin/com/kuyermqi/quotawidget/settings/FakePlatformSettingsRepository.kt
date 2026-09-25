@@ -1,5 +1,6 @@
 package com.kuyermqi.quotawidget.settings
 
+import com.kuyermqi.quotawidget.context.ContextHealthSnapshot
 import com.kuyermqi.quotawidget.domain.AppSettings
 import com.kuyermqi.quotawidget.domain.QuotaSnapshot
 import com.kuyermqi.quotawidget.domain.RefreshIconPhase
@@ -37,6 +38,7 @@ class FakePlatformSettingsRepository(
     private val refreshPhases = mutableMapOf<String, RefreshIconPhase>()
     private val refreshStartedAt = mutableMapOf<String, Long>()
     private val appSettingsFlow = MutableStateFlow(AppSettings())
+    private val contextHealthFlow = MutableStateFlow<ContextHealthSnapshot?>(null)
 
     var platformTipDismissed: Boolean = false
     var oemBackgroundTipDismissed: Boolean = false
@@ -87,6 +89,7 @@ class FakePlatformSettingsRepository(
             usageProgressStyle = current.usageProgressStyle,
         )
         widgetFlow(PlatformIds.CODEX).value = WidgetDisplayState.NotConfigured
+        contextHealthFlow.value = null
     }
 
     override fun observeNewApiSettings(): Flow<NewApiSettings> = newApiFlow.asStateFlow()
@@ -165,6 +168,20 @@ class FakePlatformSettingsRepository(
     override suspend fun getUpdateIgnoredVersion(): String? = updateIgnoredVersion
     override suspend fun setUpdateIgnoredVersion(version: String?) {
         updateIgnoredVersion = version
+    }
+
+    override fun observeContextHealth(): Flow<ContextHealthSnapshot?> =
+        contextHealthFlow.asStateFlow()
+
+    override suspend fun getContextHealth(): ContextHealthSnapshot? =
+        contextHealthFlow.value
+
+    override suspend fun saveContextHealth(snapshot: ContextHealthSnapshot) {
+        contextHealthFlow.value = snapshot
+    }
+
+    override suspend fun clearContextHealth() {
+        contextHealthFlow.value = null
     }
 
     override fun observeAppSettings(): Flow<AppSettings> = appSettingsFlow.asStateFlow()
