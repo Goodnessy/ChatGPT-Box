@@ -315,7 +315,6 @@ fun HomeScreen(
                             PlatformIds.DEEPSEEK -> DeepSeekHomeContent(
                                 state = deepSeek,
                                 onRefreshPlatform = onRefreshPlatform,
-                                onRefreshContext = onRefreshContext,
                             )
                             PlatformIds.OPENCODE_GO -> OpenCodeGoHomeContent(
                                 state = openCode,
@@ -326,6 +325,7 @@ fun HomeScreen(
                                 state = codex,
                                 bindings = codexBindings,
                                 onRefreshPlatform = onRefreshPlatform,
+                                onRefreshContext = onRefreshContext,
                             )
                             PlatformIds.NEW_API -> NewApiHomeContent(
                                 state = newApi,
