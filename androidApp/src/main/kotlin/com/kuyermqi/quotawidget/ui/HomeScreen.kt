@@ -36,6 +36,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.kuyermqi.quotawidget.R
+import com.kuyermqi.quotawidget.context.ContextHealthRefreshResult
 import com.kuyermqi.quotawidget.domain.WidgetDisplayState
 import com.kuyermqi.quotawidget.platform.PlatformIds
 import com.kuyermqi.quotawidget.platform.PlatformRegistry
@@ -71,6 +72,7 @@ fun HomeScreen(
     settingsRepository: PlatformSettingsRepository,
     onRefreshPlatform: suspend (String) -> WidgetDisplayState,
     onRefreshAllConfigured: suspend () -> Unit,
+    onRefreshContext: suspend () -> ContextHealthRefreshResult,
     onOpenAppSettings: () -> Unit,
     showPlatformTip: Boolean,
     showOemBackgroundTip: Boolean,
@@ -104,7 +106,7 @@ fun HomeScreen(
 
     val deepSeekWidgetState = DeepSeekHomeEffects(deepSeek)
     val openCodeBindings = OpenCodeGoHomeEffects(openCode, onRefreshPlatform)
-    val codexBindings = CodexHomeEffects(codex, onRefreshPlatform)
+    val codexBindings = CodexHomeEffects(codex, onRefreshPlatform, onRefreshContext)
     val newApiWidgetState = NewApiHomeEffects(newApi)
 
     val hasVisibleTips = tipLoaded && (
@@ -313,6 +315,7 @@ fun HomeScreen(
                             PlatformIds.DEEPSEEK -> DeepSeekHomeContent(
                                 state = deepSeek,
                                 onRefreshPlatform = onRefreshPlatform,
+                                onRefreshContext = onRefreshContext,
                             )
                             PlatformIds.OPENCODE_GO -> OpenCodeGoHomeContent(
                                 state = openCode,
