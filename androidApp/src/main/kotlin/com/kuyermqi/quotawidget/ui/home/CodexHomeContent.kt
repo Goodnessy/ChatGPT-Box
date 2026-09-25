@@ -17,6 +17,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import android.content.res.Resources
 import com.kuyermqi.quotawidget.R
+import com.kuyermqi.quotawidget.context.ContextHealthRefreshResult
+import com.kuyermqi.quotawidget.context.ContextHealthSnapshot
+import com.kuyermqi.quotawidget.context.ContextHealthStatus
 import com.kuyermqi.quotawidget.domain.QuotaWindow
 import com.kuyermqi.quotawidget.domain.UsageDisplayMode
 import com.kuyermqi.quotawidget.domain.UsageProgressStyle
@@ -29,6 +32,7 @@ import com.kuyermqi.quotawidget.platform.PlatformIds
 import com.kuyermqi.quotawidget.settings.CodexSettings
 import com.kuyermqi.quotawidget.settings.PlatformSettingsRepository
 import com.kuyermqi.quotawidget.ui.components.CodexConfigContent
+import com.kuyermqi.quotawidget.ui.components.ContextHealthSection
 import com.kuyermqi.quotawidget.ui.usage.formatCodexUsageWindowSummary
 import com.kuyermqi.quotawidget.widget.WidgetGlanceState
 import kotlinx.coroutines.launch
@@ -51,6 +55,14 @@ class CodexHomeState internal constructor(
     var error by mutableStateOf<String?>(null)
         internal set
     var loaded by mutableStateOf(false)
+        internal set
+    var contextHealth by mutableStateOf<ContextHealthSnapshot?>(null)
+        internal set
+    var contextHealthError by mutableStateOf<String?>(null)
+        internal set
+    var contextHealthRefreshing by mutableStateOf(false)
+        internal set
+    var migrationPrompt by mutableStateOf("")
         internal set
 
     val isConfigured: Boolean
@@ -82,7 +94,7 @@ class CodexHomeState internal constructor(
         reauthMsg: String,
     ): String? {
         if (!isConfigured) return null
-        return when (widgetState) {
+        val quota = when (widgetState) {
             is WidgetDisplayState.Success -> formatCodexUsageWindowSummary(
                 resources = resources,
                 windows = widgetState.snapshot.windows,
@@ -95,6 +107,17 @@ class CodexHomeState internal constructor(
             WidgetDisplayState.NeedsReauth -> reauthMsg
             WidgetDisplayState.NotConfigured -> null
         }
+        val contextSummary = contextHealth?.let { snapshot ->
+            val label = when (snapshot.status) {
+                ContextHealthStatus.HEALTHY -> "🟢 " + resources.getString(R.string.context_health_status_healthy)
+                ContextHealthStatus.LONG -> "🟡 " + resources.getString(R.string.context_health_status_long)
+                ContextHealthStatus.MIGRATION_RECOMMENDED -> "🟠 " + resources.getString(R.string.context_health_status_migrate)
+                ContextHealthStatus.HIGH_RISK -> "🔴 " + resources.getString(R.string.context_health_status_high_risk)
+            }
+            resources.getString(R.string.context_health_title) + " " + label + " · " +
+                resources.getString(R.string.context_health_approx, snapshot.estimatedPercent)
+        }
+        return listOfNotNull(quota, contextSummary).joinToString(" · ").ifBlank { null }
     }
 
     internal fun repository(): PlatformSettingsRepository = settingsRepository
@@ -121,6 +144,7 @@ fun rememberCodexHomeState(
 fun CodexHomeEffects(
     state: CodexHomeState,
     onRefreshPlatform: suspend (String) -> WidgetDisplayState,
+    onRefreshContext: suspend () -> ContextHealthRefreshResult,
 ): CodexHomeBindings {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -132,6 +156,36 @@ fun CodexHomeEffects(
     val windows = (observed as? WidgetDisplayState.Success)?.snapshot?.windows.orEmpty()
     val repoSettings by state.repository().observeCodexSettings()
         .collectAsStateWithLifecycle(initialValue = state.settings)
+    val cachedContext by state.repository().observeContextHealth()
+        .collectAsStateWithLifecycle(initialValue = state.contextHealth)
+
+    LaunchedEffect(cachedContext) {
+        if (cachedContext != null) {
+            state.contextHealth = cachedContext
+        }
+    }
+
+    LaunchedEffect(observed, state.settings.isConfigured) {
+        if (!state.settings.isConfigured || observed !is WidgetDisplayState.Success) return@LaunchedEffect
+        state.contextHealthRefreshing = true
+        state.contextHealthError = null
+        try {
+            when (val result = onRefreshContext()) {
+                is ContextHealthRefreshResult.Ready -> {
+                    state.contextHealth = result.snapshot
+                    state.migrationPrompt = result.migrationPrompt
+                }
+                is ContextHealthRefreshResult.Unavailable -> {
+                    state.contextHealthError = result.reason
+                }
+                is ContextHealthRefreshResult.Error -> {
+                    state.contextHealthError = result.message
+                }
+            }
+        } finally {
+            state.contextHealthRefreshing = false
+        }
+    }
 
     // Keep in-memory settings aligned with DataStore (e.g. provider window-kind clamp).
     LaunchedEffect(repoSettings, state.loaded) {
@@ -284,10 +338,43 @@ fun ColumnScope.CodexHomeContent(
     state: CodexHomeState,
     bindings: CodexHomeBindings,
     onRefreshPlatform: suspend (String) -> WidgetDisplayState,
+    onRefreshContext: suspend () -> ContextHealthRefreshResult,
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val msgNeedsReauth = stringResource(R.string.widget_needs_reauth)
+
+    if (state.settings.isConfigured && bindings.widgetState !is WidgetDisplayState.NeedsReauth) {
+        ContextHealthSection(
+            snapshot = state.contextHealth,
+            isRefreshing = state.contextHealthRefreshing,
+            errorMessage = state.contextHealthError,
+            migrationPrompt = state.migrationPrompt,
+            onRefresh = {
+                if (state.contextHealthRefreshing) return@ContextHealthSection
+                scope.launch {
+                    state.contextHealthRefreshing = true
+                    state.contextHealthError = null
+                    try {
+                        when (val result = onRefreshContext()) {
+                            is ContextHealthRefreshResult.Ready -> {
+                                state.contextHealth = result.snapshot
+                                state.migrationPrompt = result.migrationPrompt
+                            }
+                            is ContextHealthRefreshResult.Unavailable -> {
+                                state.contextHealthError = result.reason
+                            }
+                            is ContextHealthRefreshResult.Error -> {
+                                state.contextHealthError = result.message
+                            }
+                        }
+                    } finally {
+                        state.contextHealthRefreshing = false
+                    }
+                }
+            },
+        )
+    }
 
     CodexConfigContent(
         isLoggedIn = state.settings.isConfigured &&
@@ -390,4 +477,8 @@ private suspend fun clearCodexSession(
     )
     state.applyDraft()
     state.lastDisplay = null
+    state.contextHealth = null
+    state.contextHealthError = null
+    state.contextHealthRefreshing = false
+    state.migrationPrompt = ""
 }
