@@ -104,6 +104,11 @@ fun ContextHealthSection(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2,
                     )
+                    Text(
+                        text = stringResource(R.string.context_health_recent_note),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             },
             text = {
