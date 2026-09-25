@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - feature/context-health-v0.2
   workflow_dispatch:
 
 permissions:
@@ -33,11 +34,11 @@ jobs:
       - name: Prepare APK
         run: |
           mkdir -p out
-          cp androidApp/build/outputs/apk/debug/androidApp-debug.apk out/ChatGPT-Box-v0.1.2-debug.apk
+          cp androidApp/build/outputs/apk/debug/androidApp-debug.apk out/ChatGPT-Box-v0.2.0-debug.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: ChatGPT-Box-v0.1.2-debug
-          path: out/ChatGPT-Box-v0.1.2-debug.apk
+          name: ChatGPT-Box-v0.2.0-debug
+          path: out/ChatGPT-Box-v0.2.0-debug.apk
           if-no-files-found: error
