@@ -1,6 +1,7 @@
 package com.kuyermqi.quotawidget
 
 import android.app.Application
+import com.kuyermqi.quotawidget.context.ContextHealthInteractor
 import com.kuyermqi.quotawidget.provider.CodexQuotaProvider
 import com.kuyermqi.quotawidget.provider.DeepSeekQuotaProvider
 import com.kuyermqi.quotawidget.provider.NewApiQuotaProvider
@@ -29,6 +30,9 @@ class QuotaWidgetApp : Application() {
     lateinit var refreshInteractor: BalanceRefreshInteractor
         private set
 
+    lateinit var contextHealthInteractor: ContextHealthInteractor
+        private set
+
     lateinit var updateCheckInteractor: UpdateCheckInteractor
         private set
 
@@ -45,6 +49,7 @@ class QuotaWidgetApp : Application() {
                 settingsRepository.getAppSettings().darkThemeMode,
             )
         }
+        contextHealthInteractor = ContextHealthInteractor(settingsRepository)
         refreshInteractor = BalanceRefreshInteractor(
             settingsRepository = settingsRepository,
             providers = listOf(
