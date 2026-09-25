@@ -15,6 +15,8 @@ import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.state.PreferencesGlanceStateDefinition
 import com.kuyermqi.quotawidget.QuotaWidgetApp
+import com.kuyermqi.quotawidget.context.ContextHealthSnapshot
+import com.kuyermqi.quotawidget.context.ContextHealthStatus
 import com.kuyermqi.quotawidget.domain.AppSettings
 import com.kuyermqi.quotawidget.domain.CurrencyPreference
 import com.kuyermqi.quotawidget.domain.DEFAULT_CUSTOM_SEED_COLOR_ARGB
@@ -73,6 +75,8 @@ object WidgetGlanceState {
     val codexUsageProgressStyleKey = stringPreferencesKey("qw_codex_usage_progress_style")
     val newApiUsageDisplayModeKey = stringPreferencesKey("qw_new_api_usage_display")
     val newApiUsageProgressStyleKey = stringPreferencesKey("qw_new_api_usage_progress_style")
+    val contextHealthPercentKey = intPreferencesKey("qw_context_health_percent")
+    val contextHealthStatusKey = stringPreferencesKey("qw_context_health_status")
 
     private object Status {
         const val NOT_CONFIGURED = "not_configured"
@@ -101,6 +105,7 @@ object WidgetGlanceState {
         val openCodeSettings = repo.getOpenCodeGoSettings()
         val codexSettings = repo.getCodexSettings()
         val newApiSettings = repo.getNewApiSettings()
+        val contextHealth = repo.getContextHealth()
         Log.i(TAG, "syncAndUpdate reason=$reason")
 
         val manager = GlanceAppWidgetManager(context)
@@ -124,6 +129,9 @@ object WidgetGlanceState {
                             },
                             newApiSettings = newApiSettings.takeIf {
                                 target.platformId == PlatformIds.NEW_API
+                            },
+                            contextHealth = contextHealth.takeIf {
+                                target.platformId == PlatformIds.CODEX
                             },
                         )
                     }
@@ -170,9 +178,14 @@ object WidgetGlanceState {
         } else {
             null
         }
+        val contextHealth = if (platformId == PlatformIds.CODEX) {
+            repo.getContextHealth()
+        } else {
+            null
+        }
         updateAppWidgetState(context, PreferencesGlanceStateDefinition, id) { prefs ->
             prefs.toMutablePreferences().apply {
-                write(phase, display, appSettings, openCodeSettings, codexSettings, newApiSettings)
+                write(phase, display, appSettings, openCodeSettings, codexSettings, newApiSettings, contextHealth)
             }
         }
         val verify = getAppWidgetState(context, PreferencesGlanceStateDefinition, id)
@@ -219,6 +232,14 @@ object WidgetGlanceState {
 
     fun Preferences.toNewApiUsageProgressStyle(): UsageProgressStyle =
         UsageProgressStyle.fromStorage(this[newApiUsageProgressStyleKey])
+
+    fun Preferences.toContextHealthPercent(): Int? =
+        this[contextHealthPercentKey]
+
+    fun Preferences.toContextHealthStatus(): ContextHealthStatus? =
+        this[contextHealthStatusKey]?.let { stored ->
+            ContextHealthStatus.entries.find { it.name == stored }
+        }
 
     fun Preferences.toDisplayState(): WidgetDisplayState {
         return when (this[statusKey]) {
@@ -270,6 +291,7 @@ object WidgetGlanceState {
         openCodeSettings: OpenCodeGoSettings?,
         codexSettings: CodexSettings?,
         newApiSettings: NewApiSettings?,
+        contextHealth: ContextHealthSnapshot?,
     ) {
         this[refreshPhaseKey] = phase.name
         this[darkThemeModeKey] = appSettings.darkThemeMode.name
