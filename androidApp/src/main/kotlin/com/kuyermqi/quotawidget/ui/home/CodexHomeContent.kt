@@ -351,8 +351,7 @@ fun ColumnScope.CodexHomeContent(
             errorMessage = state.contextHealthError,
             migrationPrompt = state.migrationPrompt,
             onRefresh = {
-                if (state.contextHealthRefreshing) return@ContextHealthSection
-                scope.launch {
+                if (!state.contextHealthRefreshing) scope.launch {
                     state.contextHealthRefreshing = true
                     state.contextHealthError = null
                     try {
