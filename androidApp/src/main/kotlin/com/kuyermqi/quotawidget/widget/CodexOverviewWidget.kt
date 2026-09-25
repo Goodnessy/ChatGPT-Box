@@ -15,6 +15,8 @@ import com.kuyermqi.quotawidget.domain.presentCodexOverviewWindowKinds
 import com.kuyermqi.quotawidget.platform.PlatformIds
 import com.kuyermqi.quotawidget.widget.WidgetGlanceState.toCodexUsageDisplayMode
 import com.kuyermqi.quotawidget.widget.WidgetGlanceState.toCodexUsageProgressStyle
+import com.kuyermqi.quotawidget.widget.WidgetGlanceState.toContextHealthPercent
+import com.kuyermqi.quotawidget.widget.WidgetGlanceState.toContextHealthStatus
 import com.kuyermqi.quotawidget.widget.usage.UsageOverviewSizeComfortable
 import com.kuyermqi.quotawidget.widget.usage.UsageOverviewSizeCompact
 import com.kuyermqi.quotawidget.widget.usage.UsageOverviewWidgetContent
@@ -45,6 +47,8 @@ class CodexOverviewWidget : GlanceAppWidget() {
                 usageDisplayMode = prefs.toCodexUsageDisplayMode(),
                 usageProgressStyle = prefs.toCodexUsageProgressStyle(),
                 overviewKinds = overviewKinds,
+                contextHealthPercent = prefs.toContextHealthPercent(),
+                contextHealthStatus = prefs.toContextHealthStatus(),
             )
         }
     }
