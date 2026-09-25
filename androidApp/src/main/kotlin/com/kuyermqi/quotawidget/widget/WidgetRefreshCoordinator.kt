@@ -71,6 +71,9 @@ object WidgetRefreshCoordinator {
             updateWidgetSerialized(context, "spinning")
 
             val result = app.refreshInteractor.refresh(platformId)
+            if (platformId == PlatformIds.CODEX) {
+                refreshContextBestEffort(app, "user")
+            }
             logResult(platformId, result)
             Log.i(TAG, "runUserRefresh network done platform=$platformId")
 
@@ -100,6 +103,7 @@ object WidgetRefreshCoordinator {
         Log.i(TAG, "runBackgroundRefresh start")
         return try {
             val results = app.refreshInteractor.refreshAllConfigured()
+            refreshContextBestEffort(app, "background")
             results.forEachIndexed { index, result ->
                 // Prefer logging OpenCode / DeepSeek errors for diagnosis.
                 logResult("configured[$index]", result)
@@ -124,6 +128,15 @@ object WidgetRefreshCoordinator {
             Log.i(TAG, "forceIdle platform=$platformId")
         }
         updateWidgetSerialized(context, "forceIdle")
+    }
+
+    private suspend fun refreshContextBestEffort(app: QuotaWidgetApp, reason: String) {
+        try {
+            val result = app.contextHealthInteractor.refresh()
+            Log.i(TAG, "context refresh reason=$reason result=${result::class.simpleName}")
+        } catch (t: Throwable) {
+            Log.w(TAG, "context refresh skipped reason=$reason", t)
+        }
     }
 
     private fun logResult(platformId: String, result: BalanceRefreshResult) {
