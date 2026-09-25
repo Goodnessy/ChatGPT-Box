@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - feature/context-health-v0.2
     paths:
       - "androidApp/**"
       - "shared/**"
