@@ -117,6 +117,9 @@ class MainActivity : ComponentActivity() {
                     onRefreshAllConfigured = {
                         WidgetRefreshCoordinator.runBackgroundRefresh(this@MainActivity)
                     },
+                    onRefreshContext = {
+                        app.contextHealthInteractor.refresh()
+                    },
                     onOpenAppSettings = {
                         startActivity(Intent(this@MainActivity, AppSettingsActivity::class.java))
                     },
