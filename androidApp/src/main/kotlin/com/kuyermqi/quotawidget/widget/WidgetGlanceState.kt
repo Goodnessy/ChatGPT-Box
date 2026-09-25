@@ -89,33 +89,9 @@ object WidgetGlanceState {
     )
 
     private fun targets(): List<Target> = listOf(
-        Target(DeepSeekBalanceWidget(), DeepSeekBalanceWidget::class.java, PlatformIds.DEEPSEEK),
-        Target(
-            DeepSeekBalanceCompactWidget(),
-            DeepSeekBalanceCompactWidget::class.java,
-            PlatformIds.DEEPSEEK,
-        ),
-        Target(OpenCodeGoWidget(), OpenCodeGoWidget::class.java, PlatformIds.OPENCODE_GO),
-        Target(
-            OpenCodeGoCompactWidget(),
-            OpenCodeGoCompactWidget::class.java,
-            PlatformIds.OPENCODE_GO,
-        ),
-        Target(
-            OpenCodeGoOverviewWidget(),
-            OpenCodeGoOverviewWidget::class.java,
-            PlatformIds.OPENCODE_GO,
-        ),
         Target(CodexWidget(), CodexWidget::class.java, PlatformIds.CODEX),
         Target(CodexCompactWidget(), CodexCompactWidget::class.java, PlatformIds.CODEX),
         Target(CodexOverviewWidget(), CodexOverviewWidget::class.java, PlatformIds.CODEX),
-        Target(NewApiBalanceWidget(), NewApiBalanceWidget::class.java, PlatformIds.NEW_API),
-        Target(
-            NewApiBalanceCompactWidget(),
-            NewApiBalanceCompactWidget::class.java,
-            PlatformIds.NEW_API,
-        ),
-        Target(NewApiUsageWidget(), NewApiUsageWidget::class.java, PlatformIds.NEW_API),
     )
 
     suspend fun syncAndUpdate(context: Context, reason: String) {
