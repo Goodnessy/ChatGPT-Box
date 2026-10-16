@@ -1,0 +1,46 @@
+name: Daily Actions Artifact Cleanup
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * *'
+      timezone: 'Asia/Shanghai'
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: daily-actions-artifact-cleanup
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Delete stale artifacts, preserve the newest and last 24 hours
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const artifacts = await github.paginate(
+              github.rest.actions.listArtifactsForRepo,
+              { owner, repo, per_page: 100 }
+            );
+            artifacts.sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
+            const latestId = artifacts[0]?.id;
+            const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+            let deleted = 0, freedBytes = 0;
+            for (const a of artifacts) {
+              if (a.id === latestId || Date.parse(a.created_at) >= cutoff) continue;
+              try {
+                await github.rest.actions.deleteArtifact({ owner, repo, artifact_id: a.id });
+                deleted++;
+                freedBytes += a.size_in_bytes;
+              } catch (e) {
+                if (e.status === 404) core.warning(`Artifact already removed: ${a.id}`);
+                else throw e;
+              }
+            }
+            core.notice(`ARTIFACT_CLEANUP_DONE repo=${owner}/${repo} scanned=${artifacts.length} deleted=${deleted} freed_bytes=${freedBytes}`);
